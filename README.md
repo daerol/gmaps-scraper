@@ -3,6 +3,7 @@
 This is not completed personal project, tweaked the code based of [this](https://github.com/MightyKyloRen/GoogleMapsScrapping) for my own usage. Added some useful print statements and also extend the scrapes to allow longer lists instead of a fixed number.  
 
 ### Todo:
+- Unable to get handphone numbers that starts with 9 or 8. 
 - Require to open an excel file and loop into the company names and search for related companies.
 
 ## Installation

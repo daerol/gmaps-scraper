@@ -84,7 +84,7 @@ def parse_data():
                 length_card_body = len(card_body)
                 try:
                     for j in range(length_card_body):
-                        if str(card_body[j].text)[0] == "6" or str(card_body[j].text)[0] == "9":
+                        if str(card_body[j].text)[0] == "6" or len(str(card_body[j].text)[0]) == 9:
                             phone = card_body[j].text
                 except:
                     phone="Not available"
