@@ -10,7 +10,7 @@ This is not completed personal project, tweaked the code based of [this](https:/
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install dependencies.
 
 ```bash
-pip: -r requirements.txt
+pip -r requirements.txt
 ```
 
 ## Usage
