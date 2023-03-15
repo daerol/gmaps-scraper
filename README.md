@@ -3,7 +3,7 @@
 This is personal project and not completed, tweaked the code based of [this](https://github.com/MightyKyloRen/GoogleMapsScrapping) for my own usage. 
 
 Changelogs:
-- Extended the scrape list to allow more scrapes
+- Extended the download list to allow more scrapes
 - Optimised the initial codes by removing some duplicated codes (try/except and for-loop) and also include code reusability
 - Added more informational print statements to allow me to debug and understand number of scrape queries i'm receiving.
 
@@ -29,3 +29,6 @@ python3 main.py
 
 ## Credits
 MightyKyloRen/GoogleMapsScrapping
+
+## Disclaimers
+This code is to download data in bulk but just a personal project. The author is not responsible for any illegitimate use.
