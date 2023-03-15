@@ -11,8 +11,8 @@ import os
 import logging
 
 
-SEARCH_TERM = "Fat"
-LOCATION = "Ang Mo Kio"
+SEARCH_TERM = "Fat Life Pte Ltd"
+LOCATION = "Singapore"
 BASE_URL = "https://www.google.com/maps/search/{search}/@1.3158171,103.7213709,11.71z/data=!3m1!4b1"
 FINAL_URL = BASE_URL.format(search=SEARCH_TERM+"+in+"+LOCATION)
 
@@ -98,7 +98,6 @@ def parse_data():
 
             for content in card_body:
                 text = content.text
-                print(text[-4:])
                 if "." in text[-4:] or "." in text[-3:] or "." in text[-2:]:
                     website = content.text
                 elif len(text) == 9:
