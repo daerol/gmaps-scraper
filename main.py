@@ -6,19 +6,33 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.chrome.options import Options
+from fake_useragent import UserAgent 
 import os
 import logging
 
 
-SEARCH_TERM = "Bakery"
+SEARCH_TERM = "Fat"
 LOCATION = "Ang Mo Kio"
 BASE_URL = "https://www.google.com/maps/search/{search}/@1.3158171,103.7213709,11.71z/data=!3m1!4b1"
 FINAL_URL = BASE_URL.format(search=SEARCH_TERM+"+in+"+LOCATION)
-browser = webdriver.Chrome()
-SCROLL_PAUSE_TIME = 5
+
+
+options = Options()
+options.add_argument("start-maximized")
+options.add_argument("--headless=new")
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option('excludeSwitches', ['enable-logging'])
+options.add_experimental_option('useAutomationExtension', False)
+options.add_argument('--disable-blink-features=AutomationControlled')
+options.add_argument(f'user-agent={UserAgent().random}')
+
+browser = webdriver.Chrome(options=options)
+SCROLL_PAUSE_TIME = 2
+RESULT_LENGTH = 1000
 record = []
 temp_array = []
-number_counter = 0
+
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -32,20 +46,24 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def parse_data():
-
+    
+    number_counter = 0
     action = ActionChains(browser)
     a = browser.find_elements(By.CLASS_NAME, "hfpxzc")
-  
-    while len(a) < 1000:
-        
-        var = len(a)
-        scroll_origin = ScrollOrigin.from_element(a[len(a)-1])
+
+    def scroll_to_element(element):
+        scroll_origin = ScrollOrigin.from_element(element)
         action.scroll_from_origin(scroll_origin, 0, 5000).perform()
+  
+    while len(a) < RESULT_LENGTH:
+        
+        initial_value = len(a)
+        scroll_to_element(a[len(a)-1])
         time.sleep(SCROLL_PAUSE_TIME)
         a = browser.find_elements(By.CLASS_NAME, "hfpxzc")
         
 
-        if len(a) == var:
+        if len(a) == initial_value:
             print(f"{bcolors.OKCYAN}2/4: ----RUNNING: Preparing {(number_counter/len(a))*100:.2f}/100%... please wait... {bcolors.ENDC}")
             number_counter+=6
             if number_counter > len(a):
@@ -57,59 +75,47 @@ def parse_data():
         
     
 
-    for i in range(len(a)):
-        scroll_origin = ScrollOrigin.from_element(a[i])
-        action.scroll_from_origin(scroll_origin, 0, 5000).perform()
-        action.move_to_element(a[i]).perform()
-        a[i].click()
+    for i, element in enumerate(a):
+        scroll_to_element(element)
+        action.move_to_element(element).perform()
+        element.click()
         time.sleep(2)
         source = browser.page_source
         soup = BeautifulSoup(source, 'html.parser')
         try:
-            # Reset the names, phone, address, website
-            name, phone, address, website = "","","",""
+            name = soup.find('h1', {"class": "DUwDvf fontHeadlineLarge"}).text
+            if name in temp_array:
+                continue
 
-            # Get company name
-            company_name = soup.findAll('h1', {"class": "DUwDvf fontHeadlineLarge"})
+            print(f"{bcolors.OKBLUE}3/4: ----RUNNING: Scraping {i+1}/{len(a)} company name:{name} {bcolors.ENDC}")
 
-            name = company_name[0].text
-            if name not in temp_array:
-                print(f"{bcolors.OKBLUE}3/4: ----RUNNING: Scraping {i}/{len(a)-1} company name:{name} {bcolors.ENDC}")
+            temp_array.append(name)
+            card_body = soup.findAll('div', {"class": "Io6YTe fontBodyMedium"})
 
-                # Store name in temp array to prevent duplicates
-                temp_array.append(name)
+            phone = "Not available"
+            website = "Not available"
+            address = card_body[0].text
 
-                # Get phone number and website
-                card_body = soup.findAll('div', {"class": "Io6YTe fontBodyMedium"})
-                length_card_body = len(card_body)
-                try:
-                    for j in range(length_card_body):
-                        if str(card_body[j].text)[0] == "6" or len(str(card_body[j].text)[0]) == 9:
-                            phone = card_body[j].text
-                except:
-                    phone="Not available"
+            for content in card_body:
+                text = content.text
+                print(text[-4:])
+                if "." in text[-4:] or "." in text[-3:] or "." in text[-2:]:
+                    website = content.text
+                elif len(text) == 9:
+                    phone = text
+    
+            record.append((name, phone, address, website))
+            df = pd.DataFrame(record, columns=['Name', 'Phone number', 'Address', 'Website'])
+            df.to_csv(SEARCH_TERM + '.csv', index=False, encoding='utf-8')
 
-                address = card_body[0].text
-                
-                try:
-                    for z in range(length_card_body):
-                        if str(card_body[z].text)[-4] == "." or str(card_body[z].text)[-3] == "."  or str(card_body[z].text)[-2] == ".":
-                            website = card_body[z].text
-                except:
-                    website="Not available"
-
-                # Append to record
-                record.append((name,phone,address,website))
-                df = pd.DataFrame(record,columns=['Name','Phone number','Address','Website'])  
-                df.to_csv(SEARCH_TERM + '.csv', index=False, encoding='utf-8')
-        except:
-            print(f"{bcolors.FAIL}3/4: ----FAILED: Phone or website error, IGNORE {bcolors.ENDC}")
+        except Exception as e:
+            print(f"{bcolors.FAIL}3/4: ----FAILED: {e} has occurred {bcolors.ENDC}")
             continue
 
     
 
 if __name__ == "__main__":
-    print(f"{bcolors.WARNING}1/4: ----INFO: Search Term: {SEARCH_TERM}, Location: {LOCATION} {bcolors.ENDC}")
+    print(f"{bcolors.WARNING}1/4: ----INFO: Search Term: {SEARCH_TERM} | Location: {LOCATION} {bcolors.ENDC}")
     print(f"{bcolors.WARNING}1/4: ----STARTED: Running Gmaps Crawler {bcolors.ENDC}")
     browser.get(FINAL_URL)
     time.sleep(10)
