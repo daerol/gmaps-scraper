@@ -7,6 +7,7 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.chrome.options import Options
 from fake_useragent import UserAgent 
+from emailfinder.extractor import *
 import os
 import logging
 
@@ -94,6 +95,7 @@ def parse_data():
 
             phone = "Not available"
             website = "Not available"
+            emails = []
             address = card_body[0].text
 
             for content in card_body:
@@ -102,9 +104,15 @@ def parse_data():
                     website = content.text
                 elif len(text) == 9:
                     phone = text
+
+            if website != "Not available":
+                emails = get_emails_from_bing(website)
+                emails = '|'.join(emails)
+            else:
+                emails = "Not available"
     
-            record.append((name, phone, address, website))
-            df = pd.DataFrame(record, columns=['Name', 'Phone number', 'Address', 'Website'])
+            record.append((name, phone, address, website, emails))
+            df = pd.DataFrame(record, columns=['Name', 'Phone number', 'Address', 'Website','Emails'])
             df.to_csv(SEARCH_TERM + '.csv', index=False, encoding='utf-8')
 
         except Exception as e:
