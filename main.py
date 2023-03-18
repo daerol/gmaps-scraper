@@ -1,20 +1,24 @@
-from selenium import webdriver
-from bs4 import BeautifulSoup
 import time
+import os
+import logging
+import threading
 import pandas as pd
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from emailfinder.extractor import *
+from fake_useragent import UserAgent 
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.chrome.options import Options
-from fake_useragent import UserAgent 
-from emailfinder.extractor import *
-import os
-import logging
+from selenium.common.exceptions import ElementClickInterceptedException
 
 
-SEARCH_TERM = "Fat Life Pte Ltd"
-LOCATION = "Singapore"
+
+SEARCH_TERM = "Chicken Rice"
+LOCATION = "Hougang"
 BASE_URL = "https://www.google.com/maps/search/{search}/@1.3158171,103.7213709,11.71z/data=!3m1!4b1"
+# BASE_URL = "https://www.google.com/maps/search/{search}" 
 FINAL_URL = BASE_URL.format(search=SEARCH_TERM+"+in+"+LOCATION)
 
 
@@ -51,6 +55,7 @@ def parse_data():
     number_counter = 0
     action = ActionChains(browser)
     a = browser.find_elements(By.CLASS_NAME, "hfpxzc")
+    
 
     def scroll_to_element(element):
         scroll_origin = ScrollOrigin.from_element(element)
@@ -77,48 +82,50 @@ def parse_data():
     
 
     for i, element in enumerate(a):
-        scroll_to_element(element)
-        action.move_to_element(element).perform()
-        element.click()
-        time.sleep(2)
-        source = browser.page_source
-        soup = BeautifulSoup(source, 'html.parser')
         try:
-            name = soup.find('h1', {"class": "DUwDvf fontHeadlineLarge"}).text
-            if name in temp_array:
+            scroll_to_element(element)
+            action.move_to_element(element).perform()
+            element.click()
+            time.sleep(2)
+            source = browser.page_source
+            soup = BeautifulSoup(source, 'html.parser')
+            try:
+                name = soup.find('h1', {"class": "DUwDvf fontHeadlineLarge"}).text
+                if name in temp_array:
+                    continue
+
+                print(f"{bcolors.OKBLUE}3/4: ----RUNNING: Scraping {i+1}/{len(a)} company name:{name} {bcolors.ENDC}")
+
+                temp_array.append(name)
+                card_body = soup.findAll('div', {"class": "Io6YTe fontBodyMedium"})
+
+                phone = "Not available"
+                website = "Not available"
+                emails = []
+                address = card_body[0].text
+
+                for content in card_body:
+                    text = content.text
+                    if "." in text[-4:] or "." in text[-3:] or "." in text[-2:]:
+                        website = content.text
+                    elif len(text) == 9:
+                        phone = text
+
+                if website != "Not available":
+                    emails = get_emails_from_bing(website)
+                    emails = '|'.join(emails)
+                else:
+                    emails = "Not available"
+        
+                record.append((name, phone, address, website, emails))
+                df = pd.DataFrame(record, columns=['Name', 'Phone number', 'Address', 'Website','Emails'])
+                df.to_csv(SEARCH_TERM + "_" + LOCATION + '.csv', index=False, encoding='utf-8')
+
+            except Exception as e:
+                print(f"{bcolors.FAIL}3/4: ----FAILED: {e} has occurred {bcolors.ENDC}")
                 continue
-
-            print(f"{bcolors.OKBLUE}3/4: ----RUNNING: Scraping {i+1}/{len(a)} company name:{name} {bcolors.ENDC}")
-
-            temp_array.append(name)
-            card_body = soup.findAll('div', {"class": "Io6YTe fontBodyMedium"})
-
-            phone = "Not available"
-            website = "Not available"
-            emails = []
-            address = card_body[0].text
-
-            for content in card_body:
-                text = content.text
-                if "." in text[-4:] or "." in text[-3:] or "." in text[-2:]:
-                    website = content.text
-                elif len(text) == 9:
-                    phone = text
-
-            if website != "Not available":
-                emails = get_emails_from_bing(website)
-                emails = '|'.join(emails)
-            else:
-                emails = "Not available"
-    
-            record.append((name, phone, address, website, emails))
-            df = pd.DataFrame(record, columns=['Name', 'Phone number', 'Address', 'Website','Emails'])
-            df.to_csv(SEARCH_TERM + '.csv', index=False, encoding='utf-8')
-
-        except Exception as e:
-            print(f"{bcolors.FAIL}3/4: ----FAILED: {e} has occurred {bcolors.ENDC}")
+        except (IndexError, ElementClickInterceptedException):
             continue
-
     
 
 if __name__ == "__main__":
@@ -127,4 +134,7 @@ if __name__ == "__main__":
     browser.get(FINAL_URL)
     time.sleep(10)
     parse_data()
+    # t1 = threading.Thread(target=parse_data)
+    # t1.start()
+    # t1.join()
     print(f"{bcolors.OKGREEN}4/4: ----COMPLETED: Closing Gmaps Crawler pipeline {bcolors.ENDC}")
