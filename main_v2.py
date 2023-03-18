@@ -6,6 +6,7 @@ import random
 import settings
 import pandas as pd
 import concurrent.futures
+import util
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from emailfinder.extractor import *
@@ -68,7 +69,7 @@ def scrape_element(element, temp_array, record):
             card_body = soup.findAll('div', {"class": "Io6YTe fontBodyMedium"})
 
             phone = "Not available"
-            website = "Not available"
+            website = "" # Blank for the collection of Facebook, Instagram and Twitter
             emails = []
             address = card_body[0].text
 
@@ -142,3 +143,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # util.get_all_links(SEARCH_TERM + "_" + LOCATION)

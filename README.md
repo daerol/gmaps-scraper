@@ -14,13 +14,13 @@ Changelogs:
 
 18 March 2023
 - I'm keeping main.py because it somehow can scrape more but still considerably lesser than what i thought, i still thinking of ways to overcome the 122 limit of searches. 
-- After I've added the threading, i managed to fetch 30> queries but it didn't go scrape through all the queries (less than 15 queries scraped).
+- After I've added the threading, i managed to fetch <120 queries but it didn't go scrape through all the queries (less than 60 queries scraped).
 - Suggest to use main.py if you're looking at this repo and I won't be constantly updating this as I've jampacked with projects and exams.
 
 ### Todo:
 - Require to open an excel file and loop into the company names and search for related companies.
 - Test out these emails to send out cold emails and maybe lead magnets. 
-- Will try to scrape website facebook/instagram/google analytics tool once i've stablised this tool.
+- Will try to scrape website facebook/instagram/google analytics tool once i've stablised this tool. (removing util because it kinda not what is intended to do)
 
 ## Installation
 
